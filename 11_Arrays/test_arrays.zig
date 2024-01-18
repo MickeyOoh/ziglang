@@ -1,8 +1,8 @@
 const std = @import("std");
 const expect = std.testing.expect;
 const assert = std.debug.assert;
-const mem    = std.mem;
-const print  = std.debug.print;
+const mem = std.mem;
+const print = std.debug.print;
 
 // array literal
 const message = [_]u8{ 'h', 'e', 'l', 'l', 'o' };
@@ -32,8 +32,8 @@ test "iterate over an array" {
 var some_integers: [100]i32 = undefined;
 
 test "modify an array" {
-    for (some_integers) |*item, i| {
-        item.* = @intCast(i32, i);
+    for (&some_integers, 0..) |*item, i| {
+        item.* = @as(i32, @intCast(i));
     }
     try expect(some_integers[10] == 10);
     try expect(some_integers[99] == 99);
@@ -73,10 +73,10 @@ comptime {
 // use compile-time code to initialize an array
 var fancy_array = init: {
     var initial_value: [10]Point = undefined;
-    for (initial_value) |*pt, i| {
+    for (&initial_value, 0..) |*pt, i| {
         pt.* = Point{
-            .x = @intCast(i32, i),
-            .y = @intCast(i32, i) * 2,
+            .x = @as(i32, @intCast(i)),
+            .y = @as(i32, @intCast(i)) * 2,
         };
     }
     break :init initial_value;

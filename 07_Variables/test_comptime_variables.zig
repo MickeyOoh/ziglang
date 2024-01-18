@@ -11,8 +11,9 @@ test "comptime vars" {
     try expect(x == 2);
     try expect(y == 2);
 
-    if(y != 2){
-        
+    if (y != 2) {
+        // This compile error never triggers because y is a comptime variable,
+        // and so `y != 2` is a comptime value, and this if it is statically evaluated.
         @compileError("wrong y value");
     }
 }
