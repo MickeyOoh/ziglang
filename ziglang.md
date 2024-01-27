@@ -258,10 +258,277 @@ The syntax [N:x]T describes an array which has a sentinel element of value x at 
 12. Vectors
 ----
 
-A vector is a group of booleans, `Integers`, `Floats`, or `Pointers` which are operated on in parallel using SIMD instructions. Vector types are created with the builtin with the builtin function `@Type`, or using the shorthand function `std.meta.Vector`.
+A vector is a group of booleans, `Integers`, `Floats`, or `Pointers` which are operated on in parallel, using SIMD instructions if possible. Vector types are created with the builtin function `@Vector`.
 
+These operations are performed element-wise, and return a vector of the same length as the input vectors. This includes:
 * Arithmetic (`+`,`-`,`/`,`*`,`@divFloor`,`@sqrt`, `@ceil`, `@log`, etc.)
 * Bitwise operators(`>>`,`<<`,`&`,`|`, `~`, etc.)
 * Comparison operators(`<`,`>`,`==`, etc.)
+
+It is prohibited to use a math operator on a mixture of scalars (invidual numbers) and vectors. Zig provides the `@splat` builtin to easily convert from scalars to vectors, and it supports `@reduce` and array indexing syntax to convert from vectors to scalars.
+
+13. Pointers
+----
+Zig has two kinds of pointers: single-item and many-item.
+* `*T` - single-item pointer 
+		Supports deref syntax: `ptr.*`
+* `[*]T` - many-item pointer
+		index syntax: `ptr[i]`
+		slice syntax: `ptr[start..end]`
+		pointer arithmetic: `ptr + x, ptr - x`
+		`T` must have a known size, which means that it cannot be `anyopaque` or any other `opaque type`.
+
+These types are closely related to `Arrays` and `Slices`:
+
+13.1. volatile
+----
+
+13.2. Alignment
+----
+Each type has an alignment - a number of bytes such that, when a value of the type is loaded from or stored to memory,
+the memory address must be evenly divisible by this number. You can use `@alignOf` to find out this value for any type.
+Alignment depends on the CPU architecture, but is always a power of two, and less than
+
+
+13.3. allowzero
+----
+
+
+13.4. Sentinel Terminal Pointers
+----
+
+
+14. Slices
+---
+
+14.1. Sentinel-Terminated Slices
+-----
+The syntax `[:x]T` is a slice which has a runtime-known length and also guarantees a sentinel value at the element indexed by the length. The type does not guarantee that there are no sentinel elements before that.
+Sentinel-terminated slices allow element access to the `len` index.
+
+```test_null_terminated_slice.zig
+
+```
+
+15. struct
+----
+
+```test_structs.zig
+
+```
+
+15.1. Default Field Values
+----
+Each struct field may have an expression indicating the default field value. Such expressions are executed at comptime, and allow the field to be omitted in a struct literal expression:
+
+```test_struct_default_values.zig
+
+
+```
+
+15.2.  extern struct
+----
+An `extern struct` has in-memory layout guaranteed to match the C ABI for the target.
+This kind of struct should only be used for compatiblilty with the C ABI. Every other use case should be solved with `packed struct` or normal `struct`.
+
+15.3. packed struct
+-----
+`packed` structs have guaranteed in-memory layout:
+* Field remain in the order declared.
+* There is no padding between fields.
+* Zig supports arbitrary width `integers` and although normally, integers with fewer than 8 bits will still use 1 byte of memory, in packed structs, they use exactly their bit width.
+* `bool` fields use exactly 1 bit.
+* An `enum` field uses exactly the bit width of its integer tag type.
+* A `packed union` field uses exactly the bit width of the union field with the largest bit width.
+* Non-ABI-aligned fields are packed into the smallest possible ABI-aligned integers in accordance with the target endianness.
+
+
+```test_packed_structs.zig
+
+
+```
+
+
+15.4. struct Naming
+-----
+Since all structs are anonymous, Zig infers the type name based on a few rules.
+* If the struct is in the initialization expression of a variable, it gets named after that variable.
+
+15.5. Anonymous Struct Literals
+----
+
+15.6. Tuples
+----
+
+16. Enum
+----
+
+16.1. extern enum
+----
+
+
+16.2. Enum LIterals
+----
+
+16.3. Non-Exhaustive enum
+----
+
+17. union
+----
+
+
+17.1. Tagged union
+----
+
+17.2. extern union
+---
+
+17.3. packed union
+----
+
+17.4. Anonymous Union Literals
+----
+
+18. opaque
+----
+`opaque{}` declares a new type with an unknown (but non-zero) size and alignment. It can contain declarations the same as `struct`, `unions`, and `enums`.
+
+This is thypically used for type safety when interacting with C code that does not expose struct details.
+Example:
+```
+const Derp = opaque {};
+const Wat = opaque {};
+
+extern fn bar(d: *Derp) void;
+fn foo(w: *Wat) callconv(.C) void {
+    bar(w);
+}
+
+test "call foo" {
+    foo(undefined);
+}
+
+$ zig test test_opaque.zig                                                                      ✘ 1
+test_opaque.zig:6:9: error: expected type '*test_opaque.Derp', found '*test_opaque.Wat'
+    bar(w);
+        ^
+test_opaque.zig:6:9: note: pointer type child 'test_opaque.Wat' cannot cast into pointer type child 'test_opaque.Derp'
+test_opaque.zig:2:13: note: opaque declared here
+const Wat = opaque {};
+            ^~~~~~~~~
+test_opaque.zig:1:14: note: opaque declared here
+const Derp = opaque {};
+             ^~~~~~~~~
+test_opaque.zig:4:18: note: parameter type declared here
+extern fn bar(d: *Derp) void;
+                  ^~~~~
+referenced by:
+    test.call foo: test_opaque.zig:10:5
+    remaining reference traces hidden; use '-freference-trace' to see all reference traces
+```
+
+
+19. Blocks
+-----
+
+Blocks are expressions. When labled, `break` can be used to return a value from the block:
+```tset_labeled_break.zig
+const std = @import("std");
+const expect = std.testing.expect;
+
+test "labeled break from labeled block expression" {
+    var y: i32 = 123;
+
+    const x = blk: {
+        y += 1;
+        break :blk y;
+    };
+    try expect(x == 124);
+    try expect(y == 124);
+}
+```
+
+19.1. Shadowing
+----
+Identifiers are never allowed to "hide" other idnetifiers by using the same name:
+```test_shadowing.zig
+const pi = 3.14;
+
+test "inside test block" {
+	// Let's even go inside another block
+	{
+		var pi: i32 = 1234;
+	}
+}
+```
+error: local variable shadows declaration of 
+		var pi: i32 = 1234;
+
+When you read Zig code you can always rely on an identifier to consistently mean the same thing within the scope it is defined. Note that you can use the same name if the scopes are separate:
+```test_scopes.zig
+test "separate scapes" {
+    {
+        const pi = 3.14;
+        _ = pi;
+    }
+    {
+        var pi: bool = true;
+        _ = pi;
+    }
+}
+```
+
+19.2. Empty Blocks
+----
+An empty block is equivalent to `void()`:
+```tset_empty_block.zig
+const std = @import("std");
+const expect = std.testing.expect;
+
+test {
+    const a = {};
+    const b = void{};
+    try expect(@TypeOf(a) == void);
+    try expect(@TypeOf(b) == void);
+    try expect(a == b);
+}
+```
+
+20. switch
+----
+
+`switch` can be used to capture the field values of a Tagged union. Modifications to the field values can be done by placing a * before the capture variable name, turning it into a pointer.
+
+```test_switch_tagged_union.zig
+
+```
+
+20.1. Exhaustive Switching
+----
+When a `switch` expression does not have an `else` clause, it must exhaustively list all the possible values.
+Failure to do so is a compile error.
+
+```test_unhandled_enumeration_value.zig
+
+```
+
+20.2. Switching with Enum Literals
+----
+
+20.3. Inline switch
+---
+
+Switch prongs can be marked as `inline` to generate the prong's body for each possible value it could have:
+```test_inline_switch.zig
+
+```
+
+21. while
+----
+A while loop is used to repeatedly execute an expression until some condition is no longer true.
+
+```test_while.zig
+
+```
 
 

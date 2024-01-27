@@ -1,9 +1,9 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const print  = std.debug.print;
+const print = std.debug.print;
 
 test "switch on tagged union" {
-    print("\n",.{});
+    print("\n", .{});
     const Point = struct {
         x: u8,
         y: u8,
@@ -36,4 +36,5 @@ test "switch on tagged union" {
 
     try expect(b == 6);
     try expect(a.c.x == 2);
+    print("a.c.y(2): {}\n", .{a.c.y});
 }

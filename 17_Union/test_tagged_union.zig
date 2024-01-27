@@ -1,6 +1,5 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const print = std.debug.print;
 
 const ComplexTypeTag = enum {
     ok,
@@ -11,16 +10,16 @@ const ComplexType = union(ComplexTypeTag) {
     not_ok: void,
 };
 
-test "modify tagged union in switch" {
-    print("\n", .{});
-    var c = ComplexType{ .ok = 42 };
+test "switch on tagged union" {
+    const c = ComplexType{ .ok = 42 };
     try expect(@as(ComplexTypeTag, c) == ComplexTypeTag.ok);
-    print("c:{}\n", .{c});
-    print("ComplexTypeTag.ok:{}\n", .{ComplexTypeTag.ok});
+
     switch (c) {
-        ComplexTypeTag.ok => |*value| value.* += 1,
+        ComplexTypeTag.ok => |value| try expect(value == 42),
         ComplexTypeTag.not_ok => unreachable,
     }
+}
 
-    try expect(c.ok == 43);
+test "get tag type" {
+    try expect(std.meta.Tag(ComplexType) == ComplexTypeTag);
 }

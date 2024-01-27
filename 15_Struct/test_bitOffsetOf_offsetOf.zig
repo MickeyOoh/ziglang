@@ -1,9 +1,11 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const print  = std.debug.print;
+const print = std.debug.print;
 
 const BitField = packed struct {
-    a: u3,    b: u3,    c: u2,
+    a: u3,
+    b: u3,
+    c: u2,
 };
 
 test "pointer to non-bit-aligned field" {

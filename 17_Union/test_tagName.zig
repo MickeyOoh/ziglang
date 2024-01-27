@@ -1,6 +1,6 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const print  = std.debug.print;
+const print = std.debug.print;
 
 const Small2 = union(enum) {
     a: i32,
