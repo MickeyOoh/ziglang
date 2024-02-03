@@ -1,4 +1,3 @@
-// while with Error Unions
 const std = @import("std");
 const expect = std.testing.expect;
 const print = std.debug.print;
@@ -6,10 +5,11 @@ const print = std.debug.print;
 test "while error union capture" {
     var sum1: u32 = 0;
     numbers_left = 3;
-    while(eventuallyErrorSequence()) |value| {
+    while (eventuallyErrorSequence()) |value| {
         sum1 += value;
+        print("value: {}->sum:{}\n", .{ value, sum1 });
     } else |err| {
-        try expect( err == error.ReachedZero);
+        try expect(err == error.ReachedZero);
     }
 }
 

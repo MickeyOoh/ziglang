@@ -40,7 +40,7 @@ fn deferUnwindExample() void {
 }
 
 test "defer unwinding" {
-    print("\ndefer unwinding test\n",.{});
+    print("\ndefer unwinding test\n", .{});
     deferUnwindExample();
 }
 

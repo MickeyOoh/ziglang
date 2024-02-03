@@ -1,5 +1,4 @@
 // Another use case for noreturn is the exit function:
-
 const std = @import("std");
 const builtin = @import("builtin");
 const native_arch = builtin.cpu.arch;

@@ -1,13 +1,13 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const print  = std.debug.print;
+const print = std.debug.print;
 
 test "for basics" {
-    const items = [_]i32 { 4, 5, 3, 4, 0 };
+    const items = [_]i32{ 4, 5, 3, 4, 0 };
     var sum: i32 = 0;
 
     for (items) |value| {
-        if ( value == 0 ) {
+        if (value == 0) {
             continue;
         }
         sum += value;
@@ -20,19 +20,37 @@ test "for basics" {
     }
     try expect(sum == 20);
 
-    // To access the indx of iteration
+    // To access the indx of iteration, specify a second condition as well
+    // as a second capture value.
     var sum2: i32 = 0;
-    for(items) |_, i| {
+    for (items, 0..) |_, i| {
         try expect(@TypeOf(i) == usize);
-        sum2 += @intCast(i32, i);
+        sum2 += @as(i32, @intCast(i));
     }
     try expect(sum2 == 10);
 }
 
-test "for reference" {
-    var items = [_]i32 {3, 4, 2};
+test "multi object for" {
+    const items = [_]usize{ 1, 2, 3 };
+    const items2 = [_]usize{ 4, 5, 6 };
+    var count: usize = 0;
 
-    for(items) |*value| {
+    // Iterate over multiple objects.
+    // All length must be equal at the start of the loop, otherwise detectable
+    // illegal behavior accurs.
+    for (items, items2) |i, j| {
+        count += i + j;
+    }
+
+    try expect(count == 21);
+}
+
+test "for reference" {
+    var items = [_]i32{ 3, 4, 2 };
+
+    // Iterate over the slice by reference by
+    // spcifying that the capture value is a pointer.
+    for (&items) |*value| {
         value.* += 1;
     }
 
@@ -43,12 +61,12 @@ test "for reference" {
 
 test "for else" {
     // For allows an else attached to it, the same as a while loop.
-    var items = [_]?i32 {3, 4, null, 5};
+    var items = [_]?i32{ 3, 4, null, 5 };
 
     // For loops can also be used expression.
     // Similar to while loops, when you break from a for loop, the else branch is not eavluated.
     var sum: i32 = 0;
-    const result = for(items) |value| {
+    const result = for (items) |value| {
         if (value != null) {
             sum += value.?;
         }

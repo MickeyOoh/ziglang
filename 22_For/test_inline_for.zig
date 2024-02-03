@@ -1,10 +1,10 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const print  = std.debug.print;
+const print = std.debug.print;
 
 test "inline for loop" {
-    print("\n",.{});
-    const nums = [_]i32{2, 4, 6};
+    print("\n", .{});
+    const nums = [_]i32{ 2, 4, 6 };
     var sum: usize = 0;
     inline for (nums) |i| {
         const T = switch (i) {
@@ -14,7 +14,7 @@ test "inline for loop" {
             else => unreachable,
         };
         sum += typeNameLength(T);
-        print("{}: {s} -> {}\n", .{i, @typeName(T), @typeName(T).len});
+        print("{}: {s} -> {}\n", .{ i, @typeName(T), @typeName(T).len });
     }
     try expect(sum == 9);
 }

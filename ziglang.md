@@ -527,8 +527,159 @@ Switch prongs can be marked as `inline` to generate the prong's body for each po
 ----
 A while loop is used to repeatedly execute an expression until some condition is no longer true.
 
+1. `while ( i < 10 )`
+2. `break` to exit a while loop early.
+3. `continue`
+4. `while (i < 10): (i += 1) {}`
+5. `while else`
+  The result of the expression is the result of the `else` clause of a while loop.
+	`break`, like `return`, accepts a value parameter. When you `break`, the `else` is NOT evaluated.
 ```test_while.zig
 
 ```
+
+21.1. Labeled while
+----
+When a `while` loop is labeled, it can be referenced from a `break` or `continue` from within a nested loop:
+```test_while_nested_break.zig
+
+```
+
+21.2. while with Optionals
+----
+
+21.3. while with Error Unions
+-----
+
+21.4. inline while
+----
+While loops can be inlined. This causes the loop to be unrolled, which allows the code to do some things
+which only work at compile time, such as use types as first class values.
+```test_inline_while.zig
+```
+
+22. [for](https://ziglang.org/documentation/0.11.0/#for)
+----
+
+22.1. Labeled for
+----
+When a `for` loop is labeled, it can be referenced from a `break` or `continue`.
+
+
+22.2. inline for
+----
+```test_line_for.zig
+
+```
+
+It is recommended to use `inline` loops only for one of these reasons:
+* You need the loop to execute at `comptime` for the semantics to work.
+* You have a bechmark to prove that focibly unrolling the loop in this way is measurably faster.
+
+23. [if](https://ziglang.org/documentation/0.11.0/#if)
+-----
+
+
+
+24. deter
+----
+
+25. unreachable
+----
+In dEbug and ReleaseSafe mode `unreachable` emits a call to panic with the message `reached unreachable code`.
+
+In `ReleaseFast` and `ReleaseSmall` mode, the optimier uses the assumption that `unreachable` code will never be hit to perform optimizations.
+
+25.1. Basics
+----
+
+25.2. At Compile-Time
+----
+
+```test_comptime_unreachable.zig
+const assert = @import("std").debug.assert;
+
+test "type of unreachable" {
+    comptime {
+        // The type of unreahable is noreturn.
+
+        // However this assertion will still fail to compile because
+        // unreachable expressions are compile erros.
+
+        assert(@TypeOf(unreachable) == noreturn);
+    }
+}
+```
+```
+$ zig test test_comptime_unreachable.zig
+test_comptime_unreachable.zig:10:16: error: unreachable code
+        assert(@TypeOf(unreachable) == noreturn);
+               ^~~~~~~~~~~~~~~~~~~~
+test_comptime_unreachable.zig:10:24: note: control flow is diverted here
+         assert(@TypeOf(unreachable) == noreturn);
+                        ^~~~~~~~~~~
+```
+
+26. noreturn
+----
+
+noreturn is the type of:
+
+* break
+* continue
+* return
+* unreachable
+* while (true) {}
+
+When resolving types together, such as `if` clauses or `switch` prongs, the `noreturn` type is compatible with every other type. 
+
+27. Functions
+----
+```
+const call2_op = *const fn (a: i8, b: i8) i8;
+fn do_op(fn_call: call2_op, op1: i8, op2: i8) i8 {
+   return fn_call(op1, op2);
+}
+test "function" {
+	try expect(do_op(add, 5, 6) == 11);
+	try expect(do_op(sub2, 5, 6) == -1);
+}
+```
+
+27.1. Pass-by-value Parameters
+----
+Primitive types such as `Integers` and `Floats` passed as parameters are copied, and then the copy is available in the function body. This is called "passing by value". Copying a primitive type is essentially free and typically involves nothing more than setting a register.
+
+Structs, unions, and arrays can sometimes be more efficiently passed as a reference, since a copy could be arbitrarily expensive depending on the size. When these types are passed as parameters, Zig may choose to copy and pass by value, or pass by reference, whichever way Zig decides will be faster. This is made possible, in part, by the fact that parameters are immutable.
+```test_pass_by_reference_or_value.zig
+
+```
+For extern functions, Zig follows the C ABI for passing structs and unions by value.
+
+27.2. Function Parameter Type Inference
+----
+Function parameters can be declared with `anytype` in place of the type. In this case the parameter types will be inferred when the fucntion is called. Use `@TypeOf` and `@typeinfo` to get information about the inferred type.
+```test_fn_type_inference.zig
+
+```
+
+
+27.3. Function Reflection
+----
+```test_fn_reflection.zig
+const std = @import("std");
+const math = std.math;
+const testing = std.testing;
+
+test "fn reflection" {
+    try testing.expect(@typeInfo(@TypeOf(testing.expect)).Fn.params[0].type.? == bool);
+    try testing.expect(@typeInfo(@TypeOf(testing.tmpDir)).Fn.return_type.? == testing.TmpDir);
+    try testing.expect(@typeInfo(@TypeOf(math.Log2Int)).Fn.is_generic);
+}
+```
+
+28. Errors
+----
+
 
 
